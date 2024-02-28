@@ -1,0 +1,47 @@
+html, body {
+    font-family: Pretendard !important;
+}
+/* WorkSpores */
+
+table.dataTable > thead .sorting:after {
+  right: 0.5em;
+  content: "" !important;
+  opacity: 1 !important;
+}
+table.dataTable {
+  font-size: 16px !important;
+  font-weight: 500 !important;
+}
+table.dataTable thead th{
+    vertical-align: top !important;
+}
+.ws-p {
+    padding: 1rem 1.25rem !important
+}
+.ws-mh-0 {
+    min-height: 0 !important
+}
+.ws-bg-soild {
+    background-color: #F5F8FA !important;
+}
+.ws-btn {
+    color: #3F4254 !important;
+    font-weight: bold !important;
+    font-size: 14px;
+}
+.ws-text-dark {
+    color: #3F4254 !important;
+}
+.ws-text-dark .select2-selection__rendered {
+	color: #3F4254 !important;
+}
+
+.image-input [data-kt-image-input-action=cancel] {
+    cursor: pointer;
+    position: absolute;
+    right: -10px;
+    top: -10px;
+}
+.form-check-input {
+    border: 1px solid #E4E6EF
+}

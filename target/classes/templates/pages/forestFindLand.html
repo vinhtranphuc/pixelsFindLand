@@ -1,0 +1,582 @@
+<html>
+
+<head>
+    <link href="assets/common/toast.css" rel="stylesheet" type="text/css" />
+    <script src="https://code.jquery.com/jquery-3.7.1.js"
+        integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+    <style>
+        iframe html .commons_uikit__Nmsxg {
+            display: none !important;
+        }
+        .land {
+            display: inline-block;
+            position: relative;
+            width: 20%;
+        }
+        .land iframe {
+            height: 50%;
+            width: 100%;
+        }
+        .woodLocked {
+            background: red;
+            color: white;
+        }
+        .lockBtn {
+            right: -3px !important;
+            color: #ffff;
+        }
+        .locked {
+            background-color: red;
+        }
+        .unlock {
+            background-color: green;
+        }
+        .info {
+            position: absolute;
+            left: 1%;
+            font-size: 12px;
+            color: #ffff;
+        }
+        .estInput {
+            top: 2.5px;
+            left: 84px;
+            width: 33px;
+            height: 12px;
+            font-size: 10px;
+            color: black !important;
+        }
+        .clearEst {
+            top: 2.5px;
+            left: 1%;
+            width: 39px;
+            height: 12px;
+            font-size: 8px;
+            padding: 0;
+            background-color: white;
+            color: black !important;
+        }
+        .updateEst {
+            top: 2.5px;
+            left: 41px;
+            width: 43px;
+            height: 12px;
+            font-size: 8px;
+            padding: 0;
+            background-color: yellow;
+            color: black !important;
+        }
+        .estimatedPercent {
+            top: 1.5px;
+        }
+        .estimatedPercentTime {
+            top: 1.5px;
+            left: 118px;
+            font-size: 10px;
+        }
+        .currentPercentEst {
+            top: 4%;
+        }
+        .remainingTimeEst {
+            top: 8%;
+        }
+        .expectedHarverstTime {
+            top: 12%;
+        }
+        .deleteInfoBtn {
+            position: absolute;
+		    cursor: pointer;
+		    background-color: red;
+		    top: 16%;
+		    left: 3px;
+		    height: 12px;
+		    font-size: 8px;
+		    padding: 0;
+		    width: 38px;
+        }
+        .reloadBtn {
+            position: absolute;
+		    cursor: pointer;
+		    background-color: blue;
+		    color: white;
+		    top: 91%;
+		    right: 0;
+		    height: 17px;
+		    font-size: 8px;
+		    width: 48px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- <div style="display: inline-block">
+        <label>from</label>
+        <input type="number" id="from" value="1"/>
+        <label>to</label>
+        <input type="number" id="to" value="10"/>
+        <button id="searchFromTo">
+            Search
+        </button>
+    </div>
+    <span> -------- </span> -->
+    <div style="display: inline-block">
+        <label>page</label>
+        <input type="text" id="page" value="1"/>
+        <label>pageSize</label>
+        <input type="text" id="pageSize" value="10"/>
+        <button id="searchPage"> Search Page</button>
+
+        <button id="previousPage">
+            Previous
+        </button>
+        <button id="nextPage">
+            Next
+        </button>
+        <button id="noteList">
+            Note List
+        </button>
+    </div>
+    <div id="contens">
+    </div>
+
+</body>
+<script src="/assets/plugins/global/plugins.bundle.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+<script th:src="@{/assets/common/alert.js}"></script>
+    <script>
+        var rowIdx = 0;
+        var numberOfRows = 0;
+        var from = 0;
+        var to = 0;
+
+        function loadIterateRow() {
+            if(rowIdx > 0 && rowIdx  <= numberOfRows) {
+                let timeOut = (rowIdx==1)?0:(15000);
+                setTimeout(function() {
+                    loadRow(rowIdx);
+                    rowIdx++;
+                    loadIterateRow();
+                }, timeOut);
+            }
+        }
+
+        function loadRow(rowIdx) {
+            console.log('Start load row :'+rowIdx);
+            let startRow = Number(from)+(5*Number(rowIdx)-5);
+            let endRow = Number(startRow+5);
+            for(var j = startRow; j < endRow; j++ ) {
+            	loadPixelLand(j);
+            }
+            console.log('End load row :'+rowIdx);
+        }
+
+        var loadLandInterval;
+        $(document).ready(function() {
+            $('#searchFromTo').click(function() {
+                from = $('#from').val();
+                to = $('#to').val();
+                if(!from || !to || (from > to)) return;
+                // Cache.delete();
+                $('#contens').html("");
+                $('#page').val("");
+                $('#pageSize').val("");
+                rowIdx = 1;
+                let diff = Number(to) - Number(from);
+                numberOfRows = (diff<5)?1:(Math.floor(Number(diff/5))+(Number(diff%5)>0?1:0));
+                loadIterateRow();
+                // for(var i = from; i <= to; i++ ) {
+                //     loadPixelLand(i);
+                // }
+            })
+            $('#searchPage').click(function() {
+                let page = $('#page').val();
+                let pageSize = $('#pageSize').val()
+                if(!page || !pageSize) return;
+                // Cache.delete();
+                $('#contens').html("");
+
+                var from = Number(Number(Number(page)-1)*(Number(pageSize))+1);
+                $('#from').val(from);
+
+                var to = Number(Number(from)+Number(pageSize)-1);
+                $('#to').val(to);
+                clearLoadLandInterval();
+
+                for(var i = from; i <= to; i++ ) {
+                    loadPixelLand(i);
+                }
+                loadLandInfoList(from,to);
+                loadLandInfoInterval();
+            });
+
+            $('#nextPage').click(function() {
+                let page = $('#page').val();
+                $('#page').val((Number(page)+1));
+                $('#searchPage').click();
+            });
+            $('#previousPage').click(function() {
+                let page = $('#page').val();
+                $('#page').val((Number(page)-1));
+                $('#searchPage').click();
+            });
+            $('#noteList').click(function() {
+            	var win = window.open('/forestEstimated', '_blank');
+            	if (win) {
+            	    //Browser has allowed it to be opened
+            	    win.focus();
+            	} else {
+            	    //Browser has blocked it
+            	    alert('Please allow popups for this website');
+            	}
+            })
+
+            $(document).on('keypress',function(e) {
+                if(e.which == 32) {
+                    $('#nextPage').click();
+                }
+            });
+        })
+
+        function loadLandInfoInterval() {
+            loadLandInterval = setInterval(function() {
+                $('.land').each(function(e) {
+                    let estimatedPercentVal = $(this).attr('estimatedPercentVal');
+                    let estimatedPercentTime = $(this).attr('estimatedPercentTime');
+                    $(this).find(".dynamic").remove();
+                    let landId = $(this).attr('landId');
+                    var info = createInfoGrp(estimatedPercentVal,estimatedPercentTime,landId);
+                    $(this).prepend(info);
+                 });
+            }, 1000);
+        }
+
+        function clearLoadLandInterval() {
+            if(loadLandInterval) {
+                clearInterval(loadLandInterval);
+            }
+        }
+
+        function loadPixelLand(i) {
+            var url = "https://play.pixels.xyz/pixels/share/"+i;
+            // var info = createInfoGrp(1,2,3);
+            $('#contens').append('<div class="land" landId="'+i+'"><iframe id="'+i+'" src="'+url+'" title="LAnd Pixel"></iframe><div style="text-align: center;">'+i+'</div><div>');
+        }
+
+        function createInputDataGrp(estimatedPercentVal, estimatedPercentTimeVal,locked,landId) {
+        	estimatedPercentVal = estimatedPercentVal?estimatedPercentVal:'';
+
+            var estInput = createEstInput(estimatedPercentVal);
+            var clearEst = createClearEstBtn();
+            var updateEst = createUpdateEstBtn();
+            var lockBtn = createLockBtn(locked);
+            var reloadBtn = createReloadBtn();
+            if(!estimatedPercentVal || estimatedPercentVal == '' || !estimatedPercentTimeVal || estimatedPercentTimeVal == '') {
+                return estInput+clearEst+updateEst+lockBtn+reloadBtn;
+            }
+            var estimatedPercentTime = createInfo('estimatedPercentTime', estimatedPercentTimeVal?estimatedPercentTimeVal:'');
+            var deleteInfoBtn = createDeleteInfoBtn();
+
+            return estInput+clearEst+updateEst+estimatedPercentTime+lockBtn+deleteInfoBtn+reloadBtn;
+        }
+
+        function createInfoGrp(estimatedPercentVal, estimatedPercentTimeVal, landId) {
+        	estimatedPercentVal = estimatedPercentVal?estimatedPercentVal:'';
+
+        	if(!estimatedPercentVal || estimatedPercentVal == '' || !estimatedPercentTimeVal || estimatedPercentTimeVal == '') {
+                return '';
+            }
+
+            var currentPercentEstVal = Math.round(getCurrentPercentEst(estimatedPercentVal, estimatedPercentTimeVal));
+            var currentPercentEst = createInfo('currentPercentEst',currentPercentEstVal+'%');
+
+            var remainingTimeEstVal = getRemainingTimeEst(estimatedPercentVal, estimatedPercentTimeVal);
+            var remainingTimeEst = createInfo('remainingTimeEst',remainingTimeEstVal);
+
+            var expectedHarverstTimeVal = getExpectedPercentTime(estimatedPercentVal, estimatedPercentTimeVal);
+            var expectedHarverstTime = createInfo('expectedHarverstTime',expectedHarverstTimeVal);
+
+            return currentPercentEst+
+                remainingTimeEst+
+                expectedHarverstTime;
+        }
+
+        function createInfo(typeClass, value) {
+            var title = "";
+            var isDynamic = false;
+            switch(typeClass) {
+                case 'estimatedPercentTime':
+                    title = "";
+                    break;
+                case 'currentPercentEst':
+                	isDynamic = true;
+                    title = "current percent estimate : ";
+                    break;
+                case 'remainingTimeEst':
+                	isDynamic = true;
+                    title = "remaining time estimate : ";
+                    break;
+                case 'expectedHarverstTime':
+                	isDynamic = true;
+                    title = "expected harvest time : ";
+                    break;
+            }
+            var content = title+value;
+            var info = '<span class="info '+typeClass+' '+(isDynamic?"dynamic":"")+'">'+content+'</span>';
+            return info;
+        }
+
+        function createEstInput(estimatedPercent) {
+            return '<input class="info estInput" type="number" value="'+estimatedPercent+'"></input>';
+        }
+
+        function createClearEstBtn() {
+            return '<button class="info clearEst">reset est</button>';
+        }
+        function createUpdateEstBtn() {
+            return '<button class="info updateEst">update est</button>';
+        }
+        function createLockBtn(locked) {
+        	var lockClass = ((Number(locked)===1)?'locked':'unlock');
+        	var lockText = ((Number(locked)===1)?'Unlock':'Lock');
+        	return '<button class="lockBtn '+lockClass+'" style="position: absolute;cursor: pointer;">'+lockText+'</button>';
+        }
+        function createDeleteInfoBtn() {
+        	return '<button class="deleteInfoBtn">Delete</button>';
+        }
+        function createReloadBtn(){
+        	return '<button class="reloadBtn">Reload</button>';
+        }
+
+        //24h
+        var totalGrowingTm = 86400;
+
+        function getCurrentPercentEst(estimatedPercentVal, estimatedPercentTime) {
+            estimatedPercentVal = Number(estimatedPercentVal);
+            estimatedPercentTime = moment(estimatedPercentTime).toDate().getTime();
+            var now = new Date().getTime();
+            const diffSeconds = (now - estimatedPercentTime)/1000;
+            const diffSecondsPercent = (diffSeconds/totalGrowingTm)*100;
+            return estimatedPercentVal+diffSecondsPercent;
+        }
+
+        function getRemainingTimeEst(estimatedPercentVal, estimatedPercentTime) {
+            estimatedPercentVal = Number(estimatedPercentVal);
+            var remainingPercentEst = Number(100-getCurrentPercentEst(estimatedPercentVal, estimatedPercentTime));
+            var remainingTimeEst = (remainingPercentEst*totalGrowingTm)/100;
+
+            var hours = Math.floor(remainingTimeEst / 3600);
+            remainingTimeEst %= 3600;
+            var minutes = Math.floor(remainingTimeEst / 60);
+            var seconds = Math.round(remainingTimeEst % 60);
+            return hours+'h '+minutes+'m '+seconds+'s';
+        }
+
+        function getExpectedPercentTime(estimatedPercentVal, estimatedPercentTime) {
+            estimatedPercentVal = Number(estimatedPercentVal);
+            var remainingPercentEsted = Number(100-estimatedPercentVal);
+            var remainingTimeEsted = (remainingPercentEsted*totalGrowingTm)/100;
+            var expectedTime = moment(estimatedPercentTime).add(remainingTimeEsted, 'seconds').toDate();
+            return expectedTime.getHours()+'h '+expectedTime.getMinutes()+'m '+Math.round(expectedTime.getSeconds())+'s';
+        }
+
+        function loadLandInfoList(landFrom, landTo) {
+            var request = {
+                 "landFrom": landFrom
+                 ,"landTo": landTo
+             }
+            $.ajax({
+                 type: "POST"
+                 ,url: "[[${contextPath}]]/forestEstimatedList"
+                 ,headers: {
+                     "Content-Type": "application/json"
+                     ,"X-HTTP-Method-Override": "POST"
+                 }
+                 ,data: JSON.stringify(request)
+                 ,dataType: "json"
+                 ,success: function(data) {
+                    if(data && data.length > 0) {
+                    	for(let i = 0; i < data.length; i++) {
+                    		let landData = data[i];
+                    		$('.land[landId='+landData.landId+']').attr('estimatedPercentVal', landData.forestEstimatedPercent);
+                    		$('.land[landId='+landData.landId+']').attr('estimatedPercentTime', landData.forestEstimatedDt);
+                    		$('.land[landId='+landData.landId+']').attr('locked', (Boolean(landData.locked) === true)?1:0);
+                    	}
+                    }
+                    refreshAllLandData();
+                 }
+                 ,error: function(xhr) {
+                     var msg = (xhr.responseText)?xhr.responseText:'';
+                     if(msg != '') {
+                        ALERT.pop_message(msg)
+                     };
+                 }
+             });
+        }
+
+        function refreshAllLandData() {
+        	$('.land').each(function(e) {
+                let estimatedPercentVal = $(this).attr('estimatedPercentVal');
+                let estimatedPercentTime = $(this).attr('estimatedPercentTime');
+                let locked = $(this).attr('locked');
+                $(this).find(".info").remove();
+                $(this).find(".lockBtn").remove();
+
+                let landId = $(this).attr('landId');
+                var inputGrp = createInputDataGrp(estimatedPercentVal,estimatedPercentTime,locked,landId);
+                $(this).prepend(inputGrp);
+            });
+            createEvent();
+        }
+
+        function refreshLandData(landId) {
+            $('.land[landId='+landId+']').each(function(e) {
+                let estimatedPercentVal = $(this).attr('estimatedPercentVal');
+                let estimatedPercentTime = $(this).attr('estimatedPercentTime');
+                let locked = $(this).attr('locked');
+                $(this).find(".info").remove();
+                $(this).find(".lockBtn").remove();
+                $(this).find(".deleteInfoBtn").remove();
+                let landId = $(this).attr('landId');
+                var inputGrp = createInputDataGrp(estimatedPercentVal,estimatedPercentTime,locked,landId);
+                $(this).prepend(inputGrp);
+            });
+            createEvent();
+        }
+
+        function createEvent() {
+            $('.land .clearEst').unbind('click');
+            $('.land .clearEst').click(function() {
+                var landId = $(this).parents('.land').attr('landId');
+                updateForestEst(landId, 0);
+            });
+
+            $('.land .updateEst').unbind('click');
+            $('.land .updateEst').click(function() {
+                var landId = $(this).parents('.land').attr('landId');
+                var percent = $(this).parents('.land').find('input.estInput').val();
+                if(!percent || percent == '' || Number(percent) < 0 || Number(percent) > 100) {
+                    ALERT.noti_error('percent invalid (1 > 100)');
+                    return;
+                }
+                updateForestEst(landId, percent);
+            });
+
+            $('.land .lockBtn').unbind('click');
+            $('.land .lockBtn').click(function() {
+                var landId = $(this).parents('.land').attr('landId');
+                togleLockForest(landId);
+            });
+
+            $('.land .reloadBtn').unbind('click');
+            $('.land .reloadBtn').click(function() {
+                var landId = $(this).parents('.land').attr('landId');
+                var url = "https://play.pixels.xyz/pixels/share/"+landId;
+                $(this).parents('.land').find('iframe').attr('src', url);
+            });
+
+            $('.land .deleteInfoBtn').unbind('click');
+            $('.land .deleteInfoBtn').click(function() {
+                var landId = $(this).parents('.land').attr('landId');
+                deleteLandInfo(landId);
+            });
+        }
+
+        function updateForestEst(landId, percent) {
+        	$('.land[landId='+landId+'] button.clearEst').attr('disabled', true);
+            var request = {
+                    "landId": landId
+                    ,"woodPercent": percent
+               }
+               $.ajax({
+                    type: "POST"
+                    ,url: "[[${contextPath}]]/updateWoodEstimate"
+                    ,headers: {
+                        "Content-Type": "application/json"
+                        ,"X-HTTP-Method-Override": "POST"
+                    }
+                    ,data: JSON.stringify(request)
+                    ,dataType: 'json'
+                    ,success: function(data) {
+                       if(data) {
+                           $('.land[landId='+data.landId+']').attr('estimatedPercentVal', data.forestEstimatedPercent);
+                           $('.land[landId='+data.landId+']').attr('estimatedPercentTime', data.forestEstimatedDt);
+                           $('.land[landId='+data.landId+']').attr('locked', (Boolean(data.locked) === true)?1:0);
+                           refreshLandData(data.landId);
+                           ALERT.noti_success('updated land '+data.landId);
+                       }
+                       $('.land[landId='+landId+'] button.clearEst').attr('disabled', false);
+                    }
+                    ,error: function(xhr) {
+                        var msg = (xhr.responseText)?xhr.responseText:'';
+                        if(msg != '') {
+                            alert(msg);
+                        };
+                        $('.land[landId='+landId+'] button.clearEst').attr('disabled', false);
+                    }
+                });
+        }
+        function togleLockForest(landId) {
+        	$('.land[landId='+landId+'] button.lockBtn').attr('disabled', true);
+            var request = {
+                    "landId": landId
+               }
+               $.ajax({
+                    type: "POST"
+                    ,url: "[[${contextPath}]]/togleLockForest"
+                    ,headers: {
+                        "Content-Type": "application/json"
+                        ,"X-HTTP-Method-Override": "POST"
+                    }
+                    ,data: JSON.stringify(request)
+                    ,dataType: 'json'
+                    ,success: function(data) {
+                       if(data) {
+                           $('.land[landId='+data.landId+']').attr('estimatedPercentVal', data.forestEstimatedPercent);
+                           $('.land[landId='+data.landId+']').attr('estimatedPercentTime', data.forestEstimatedDt);
+                           $('.land[landId='+data.landId+']').attr('locked', (Boolean(data.locked) === true)?1:0);
+                           refreshLandData(data.landId);
+                           ALERT.noti_success('updated land '+data.landId);
+                       }
+                       $('.land[landId='+landId+'] button.lockBtn').attr('disabled', false);
+                    }
+                    ,error: function(xhr) {
+                        var msg = (xhr.responseText)?xhr.responseText:'';
+                        if(msg != '') {
+                            alert(msg);
+                        };
+                        $('.land[landId='+landId+'] button.lockBtn').attr('disabled', false);
+                    }
+                });
+        }
+        function deleteLandInfo(landId) {
+            $('.land[landId='+landId+'] button.deleteInfoBtn').attr('disabled', true);
+            var request = {
+                    "landId": landId
+               }
+               $.ajax({
+                    type: "POST"
+                    ,url: "[[${contextPath}]]/deleteForestEstimate"
+                    ,headers: {
+                        "Content-Type": "application/json"
+                        ,"X-HTTP-Method-Override": "POST"
+                    }
+                    ,data: JSON.stringify(request)
+                    ,dataType: 'text'
+                    ,success: function(data) {
+                    	$('.land[landId='+landId+']').attr('estimatedPercentVal', '');
+                        $('.land[landId='+landId+']').attr('estimatedPercentTime', '');
+                        $('.land[landId='+landId+']').attr('locked', '');
+                       refreshLandData(landId);
+                       ALERT.noti_success('deleted info land '+data.landId);
+                       $('.land[landId='+landId+'] button.deleteInfoBtn').attr('disabled', false);
+                    }
+                    ,error: function(xhr) {
+                        var msg = (xhr.responseText)?xhr.responseText:'';
+                        if(msg != '') {
+                            alert(msg);
+                        };
+                        $('.land[landId='+landId+'] button.deleteInfoBtn').attr('disabled', false);
+                    }
+                });
+        }
+    </script>
+</html>

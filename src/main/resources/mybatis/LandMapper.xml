@@ -1,0 +1,100 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tpvinh.mybatis.mapper.LandMapper">
+
+    <insert id="createLand">
+        REPLACE INTO tb_land (
+            id,
+            name
+        ) VALUES (
+            #{id},
+            #{name}
+        )
+    </insert>
+
+    <insert id="updateForestEstimate">
+        REPLACE INTO tb_forest_estimate (
+            land_id,
+            account_id,
+            forest_estimated_percent,
+            forest_estimated_dt,
+            locked
+        ) VALUES (
+            #{landId},
+            #{accountId},
+            #{forestEstimatedPercent},
+            NOW(),
+            0
+        )
+    </insert>
+
+    <insert id="togleLockForest">
+        REPLACE INTO tb_forest_estimate (
+            land_id,
+            account_id,
+            forest_estimated_percent,
+            forest_estimated_dt,
+            locked
+        )
+        SELECT
+            #{landId} AS land_id,
+            #{accountId} AS account_id,
+            (SELECT forest_estimated_percent FROM tb_forest_estimate WHERE land_id = #{landId} AND account_id = #{accountId}) AS forest_estimated_percent,
+            (SELECT forest_estimated_dt FROM tb_forest_estimate WHERE land_id = #{landId} AND account_id = #{accountId}) AS forest_estimated_percent,
+            (
+                CASE
+                    WHEN
+                        (SELECT l.locked FROM tb_forest_estimate l WHERE l.land_id = #{landId} AND l.account_id = #{accountId}) IS NULL
+                        OR
+                        (SELECT l.locked FROM tb_forest_estimate l WHERE l.land_id = #{landId} AND l.account_id = #{accountId}) = 0
+                    THEN
+                        1
+                    ELSE
+                        0
+                END
+            ) AS locked
+    </insert>
+
+    <select id="selectLandForestEstimatedList" resultType="ForestEstimateVO">
+        SELECT
+            l.id AS landId,
+            fe.account_id AS accountId,
+            fe.forest_estimated_percent AS forestEstimatedPercent,
+            fe.forest_estimated_dt AS forest_estimated_dt,
+            fe.locked
+        FROM
+            tb_land l LEFT JOIN tb_forest_estimate fe ON
+            l.id = fe.land_id
+        WHERE
+            fe.account_id = #{accountId}
+            <if test="landFrom != null and landTo != null">
+                <![CDATA[
+                    AND l.id >= #{landFrom}
+                    AND l.id <= #{landTo}
+                ]]>
+            </if>
+        ORDER BY l.id
+    </select>
+
+    <select id="selectLandForestEstimated" resultType="ForestEstimateVO">
+        SELECT
+            l.id AS landId,
+            fe.account_id AS accountId,
+            fe.forest_estimated_percent AS forestEstimatedPercent,
+            fe.forest_estimated_dt AS forest_estimated_dt,
+            fe.locked
+        FROM
+            tb_land l LEFT JOIN tb_forest_estimate fe ON
+            l.id = fe.land_id
+        WHERE
+            fe.account_id = #{accountId}
+            AND fe.land_id = #{landId}
+    </select>
+
+    <delete id="deleteForestEstimate">
+        DELETE FROM tb_forest_estimate
+        WHERE
+            account_id = #{accountId}
+            AND land_id = #{landId}
+    </delete>
+</mapper>
