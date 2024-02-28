@@ -24,7 +24,17 @@
             #{accountId},
             #{forestEstimatedPercent},
             NOW(),
-            0
+            CASE
+                WHEN
+                    (SELECT l.locked FROM tb_forest_estimate l WHERE l.land_id = #{landId} AND l.account_id = #{accountId}) IS NULL
+                    OR
+                    (SELECT l.locked FROM tb_forest_estimate l WHERE l.land_id = #{landId} AND l.account_id = #{accountId}) = 0
+                THEN
+                    0
+                ELSE
+                    1
+            END
+
         )
     </insert>
 

@@ -14,7 +14,7 @@
             width: 20%;
         }
         .land iframe {
-            height: 50%;
+            height: 47%;
             width: 100%;
             background-color: rgba(0,0,0,.6);
         }
@@ -265,7 +265,7 @@
             var updateEst = createUpdateEstBtn();
             var lockBtn = createLockBtn(locked);
             var reloadBtn = createReloadBtn();
-            var deleteInfoBtn = (locked == "1")?createDeleteInfoBtn():"";
+            var deleteInfoBtn = createDeleteInfoBtn();
 
             if(!estimatedPercentVal || estimatedPercentVal == '' || !estimatedPercentTimeVal || estimatedPercentTimeVal == '') {
                 return estInput+clearEst+updateEst+lockBtn+reloadBtn+deleteInfoBtn;
