@@ -23,7 +23,11 @@
             #{landId},
             #{accountId},
             #{forestEstimatedPercent},
-            NOW(),
+            CONVERT_TZ(NOW(),
+                 IF(NOW() >= UTC_TIMESTAMP,
+                 CONCAT('+', SUBSTRING_INDEX(TIMEDIFF(NOW(), UTC_TIMESTAMP), ':', 2)),
+                 CONCAT('-', SUBSTRING_INDEX(TIMEDIFF(UTC_TIMESTAMP, NOW()), ':', 2))
+            ),'+07:00'),
             CASE
                 WHEN
                     (SELECT l.locked FROM tb_forest_estimate l WHERE l.land_id = #{landId} AND l.account_id = #{accountId}) IS NULL
