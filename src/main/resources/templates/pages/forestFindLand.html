@@ -173,8 +173,35 @@
             console.log('End load row :'+rowIdx);
         }
 
+        function getParameterByName(name, url = window.location.href) {
+            name = name.replace(/[\[\]]/g, '\\$&');
+            var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+                results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, ' '));
+        }
+        function isNumeric(value) {
+            return /^-?\d+$/.test(value);
+        }
+
+        function updateQueryStringParameter(key, value, uri) {
+        	 if(!uri) {
+        		 uri = window.location.href;
+        	 }
+        	  var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+        	  var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+        	  if (uri.match(re)) {
+        	    return uri.replace(re, '$1' + key + "=" + value + '$2');
+        	  }
+        	  else {
+        	    return uri + separator + key + "=" + value;
+        	  }
+        	}
+
         var loadLandInterval;
         $(document).ready(function() {
+
             $('#searchFromTo').click(function() {
                 from = $('#from').val();
                 to = $('#to').val();
@@ -192,36 +219,40 @@
                 // }
             })
             $('#searchPage').click(function() {
-                let page = $('#page').val();
-                let pageSize = $('#pageSize').val()
-                if(!page || !pageSize) return;
-                // Cache.delete();
-                $('#contens').html("");
+            	/* searchPage(); */
+            	let page = $('#page').val();
+            	var searchUrl = updateQueryStringParameter("page", page);
+            	let pageSize = $('#pageSize').val();
+                searchUrl = updateQueryStringParameter("pageSize", pageSize, searchUrl);
 
-                var from = Number(Number(Number(page)-1)*(Number(pageSize))+1);
-                $('#from').val(from);
-
-                var to = Number(Number(from)+Number(pageSize)-1);
-                $('#to').val(to);
-                clearLoadLandInterval();
-
-                for(var i = from; i <= to; i++ ) {
-                    loadPixelLand(i);
-                }
-                loadLandInfoList(from,to);
-                loadLandInfoInterval();
+                window.location.href = searchUrl;
             });
 
             $('#nextPage').click(function() {
                 let page = $('#page').val();
-                $('#page').val((Number(page)+1));
-                $('#searchPage').click();
+                let nextPage = (Number(page)+1);
+                $('#page').val(nextPage);
+                /* searchPage(); */
+                var searchUrl = updateQueryStringParameter("page", nextPage);
+                let pageSize = $('#pageSize').val();
+                searchUrl = updateQueryStringParameter("pageSize", pageSize, searchUrl);
+
+                window.location.href = searchUrl;
             });
+
             $('#previousPage').click(function() {
                 let page = $('#page').val();
-                $('#page').val((Number(page)-1));
-                $('#searchPage').click();
+                let previousPage = (Number(page)-1);
+                $('#page').val(previousPage);
+
+                /* searchPage(); */
+                var searchUrl = updateQueryStringParameter("page", previousPage);
+                let pageSize = $('#pageSize').val();
+                searchUrl = updateQueryStringParameter("pageSize", pageSize, searchUrl);
+
+                window.location.href = searchUrl;
             });
+
             $('#noteList').click(function() {
             	var win = window.open('/forestEstimated', '_blank');
             	if (win) {
@@ -238,7 +269,36 @@
                     $('#nextPage').click();
                 }
             });
+
+            var page = getParameterByName("page");
+            var pageSize = getParameterByName("pageSize");
+            if(isNumeric(page) && isNumeric(pageSize)) {
+                $('#page').val(page);
+                $('#pageSize').val(pageSize);
+                searchPage();
+            }
         })
+
+        function searchPage() {
+        	let page = $('#page').val();
+            let pageSize = $('#pageSize').val()
+            if(!page || !pageSize) return;
+            // Cache.delete();
+            $('#contens').html("");
+
+            var from = Number(Number(Number(page)-1)*(Number(pageSize))+1);
+            $('#from').val(from);
+
+            var to = Number(Number(from)+Number(pageSize)-1);
+            $('#to').val(to);
+            clearLoadLandInterval();
+
+            for(var i = from; i <= to; i++ ) {
+                loadPixelLand(i);
+            }
+            loadLandInfoList(from,to);
+            loadLandInfoInterval();
+        }
 
         function loadLandInfoInterval() {
             loadLandInterval = setInterval(function() {
